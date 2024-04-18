@@ -12,7 +12,7 @@ This project deployed develop a data processing pipeline using 2 Rust lambda fun
 
 ## Project Demo
 
-![demo](./demo.mp3)
+![demo](./demo.mp4)
 
 ## Steps:
 
