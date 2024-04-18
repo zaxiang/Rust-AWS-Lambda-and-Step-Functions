@@ -1,93 +1,103 @@
-# Individual Project4
+# Rust AWS Lambda and Step Functions
 
+Zairan Xiang
 
+## Project Overview
 
-## Getting started
+This project deployed develop a data processing pipeline using 2 Rust lambda functions on AWS Step functions framework. It developed a text data pre-processing pipeline using two lambda function: the punctuation function removes the punctuation from the input sentence and the tokenization function splits the sentence into words. 
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+- Rust AWS Lambda function
+- Step Functions workflow coordinating Lambdas
+- Orchestrate data processing pipeline
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## Project Demo
 
-## Add your files
+![demo](./demo.mp3)
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+## Steps:
 
+### Rust Lambda Functions:
+create two lambda functions to remove punctuation and tokenize the sentence
+
+1. 
+```bash
+cargo lambda new punctuation
+cargo lambda new tokenization
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/zx122/individual-project4.git
-git branch -M main
-git push -uf origin main
+
+2. implement punctuation and tokenization in the corresponding main.rs files and add dependencies.
+
+### Test Lambda Functions Locally
+
+1. for each lambda function, do:
+```bash
+cd lambda_function_folder
+cargo lambda watch
 ```
 
-## Integrate with your tools
+2. then open a new terminal window, in the project directory (not the lambda function directory),
+```bash
+cargo lambda invoke --data-file path_to_data_json_file
+```
+replace path_to_data_json_file with the path to the testing data.json file (the file that has the input senetence in it)
 
-- [ ] [Set up project integrations](https://gitlab.com/zx122/individual-project4/-/settings/integrations)
+the result for testing punctuation and tokenization functions would looks like:
+![image](./image/punc.png)
+![image](./image/token.png)
 
-## Collaborate with your team
+### Deploy the Lambda functions on AWS
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+1. follow similar instructions from min-project4 and mini-project, create a new user with proper permissions assigned to this user. Choose CLI for Use case.
+![image](./image/user.png)
 
-## Test and Deploy
+2. Under Security Sredentials section, generate an access key for API access. Then, set up environment variables so that cargo lambda knows which AWS account and region to deploy to by typing these two lines in the terminal inside each rust project directory:
+```
+export AWS_ACCESS_KEY_ID="your_access_key_here"
+export AWS_SECRET_ACCESS_KEY="your_secret_key_here"
+```
 
-Use the built-in continuous integration in GitLab.
+3. under each rust lambda function directory, 
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+Build the project by running `cargo lambda build --release`
 
-***
+Deploy the project by running `cargo lambda deploy`
 
-# Editing this README
+Go to AWS Console and navigate to `Lambda`, inside `Function`: If cargo lambda deploy success, you may see the deployed lambda function on AWS, the lambda function should be ready and shown under the list
+![image](./image/lambda.png)
+![image](./image/punc_lambda.png)
+![image](./image/token_lambda.png)
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### Test Lambda Function on AWS
+we can also test the functionalities of the lambda function in aws under the Test section:
 
-## Suggestions for a good README
+![image](./image/punc_test.png)
+![image](./image/token_test.png)
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+### Data Pipeline with Step Functions
 
-## Name
-Choose a self-explaining name for your project.
+1. create new step function using the definition:
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+```json
+{
+  "Comment": "This state machine removes punctuation then tokenize the text.",
+  "StartAt": "punctuation",
+  "States": {
+    "punctuation": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:AWS_Account_ID:function:punctuation",
+      "Next": "tokenization"
+    },
+    "tokenization": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:AWS_Account_ID:function:tokenization",
+      "End": true
+    }
+  }
+}
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+![image](./image/step.png)
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+2. test the data pipeline by clicking on start execution and input a text sentence in json format. The step function will first executes punctuation function to remove all punc from the sentence, then the results will be forwarded to be the input of the tokenization function, where it splits the sentence into words and output a list of words.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+![image](./image/step_test.png)
