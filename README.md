@@ -47,7 +47,7 @@ the result for testing punctuation and tokenization functions would looks like:
 
 ### Deploy the Lambda functions on AWS
 
-1. follow similar instructions from min-project4 and mini-project, create a new user with proper permissions assigned to this user. Choose CLI for Use case.
+1. follow similar instructions from min-project4 and mini-project5, create a new user with proper permissions assigned to this user. Choose CLI for Use case.
 ![image](./image/user.png)
 
 2. Under Security Sredentials section, generate an access key for API access. Then, set up environment variables so that cargo lambda knows which AWS account and region to deploy to by typing these two lines in the terminal inside each rust project directory:
